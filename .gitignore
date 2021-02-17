@@ -1,0 +1,25 @@
+Library/
+.vscode/
+Logs/
+obj/
+Packages/
+ProjectSettings/
+.hg/
+*.meta
+*.prefab
+.hgignore
+*.csproj
+*.sln
+TextMesh Pro/
+Temp/
+Assets/Tiles/
+
+Assets/1.png
+
+Assets/FireballMat.physicsMaterial2D
+
+Assets/GroundMat.physicsMaterial2D
+
+Assets/pixel.png
+
+Assets/Backgrounds/
