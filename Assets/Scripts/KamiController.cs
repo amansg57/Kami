@@ -4,19 +4,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class KamiController : MonoBehaviour
+public class KamiController : GroundUnitController
 {
-    private const int groundLayer = 8;
-    private const int platformLayer = 12;
     private const int enemyLayer = 13;
 
     private const int velocityMult = 5;
     private const int airControlMult = 2;
     private const int jumpVelocity = 13;
     private const int projectileLimit = 5;
-    private const float knockbackXStartVelocity = 5f;
-    private const float knockbackYStartVelocity = 5f;
-    private const float smoothTime = 0.3f;
 
     private const float fireballCooldown = 0.3f;
     private const float hadoukenCooldown = 0.3f;
@@ -36,13 +31,6 @@ public class KamiController : MonoBehaviour
     [SerializeField]
     private GameObject laserPrefab;
 
-    private int health;
-    private Rigidbody2D rb2d;
-    private bool knockback = false;
-    public bool grounded = false;
-    private float currentXVelocity;
-    private float knockbackVelocity;
-    private float smoothVelocity;
     [SerializeField]
     private Transform projectileSpawnLocation;
     private Projectile currentProjectile;
@@ -55,31 +43,28 @@ public class KamiController : MonoBehaviour
         currentProjectile = Projectile.Fireball;
     }
 
-    private void FixedUpdate()
+    private void Start()
     {
-        // When being knocked back, player cannot control movement
-        if (knockback)
-        {
-            knockbackVelocity = Mathf.SmoothDamp(knockbackVelocity, 0f, ref smoothVelocity, smoothTime);
-            if (Math.Abs(knockbackVelocity) < 0.3)
-            {
-                knockback = false;
-                knockbackVelocity = 0;
-                Physics2D.IgnoreLayerCollision(9, 13, false);
-            }
-            rb2d.velocity = new Vector2(knockbackVelocity, rb2d.velocity.y);
-        }
-        else if (grounded)
-        {
-            rb2d.velocity = new Vector2(currentXVelocity, rb2d.velocity.y);
-        }
-        // If in the air, apply movement as acceleration with a speed cap
-        else if ((rb2d.velocity.x < velocityMult && currentXVelocity > 0) || (rb2d.velocity.x > -velocityMult && currentXVelocity < 0))
-        {
-            rb2d.AddForce(new Vector2(currentXVelocity * airControlMult, 0));
-        }
-        // Reset grounded check each frame
-        grounded = false;
+        knockbackXStartVelocity = 5f;
+        knockbackYStartVelocity = 5f;
+        smoothTime = 0.3f;
+        knockbackStopVelocity = 0.3f;
+    }
+
+    protected override void OnKnockbackEnd()
+    {
+        base.OnKnockbackEnd();
+        Physics2D.IgnoreLayerCollision(9, 13, false);
+    }
+
+    protected override void AirMovement()
+    {
+        rb2d.AddForce(new Vector2(currentXVelocity * airControlMult, 0));
+    }
+
+    protected override void OnDeath()
+    {
+        base.OnDeath();
     }
 
     public void OnMove(InputValue value)
@@ -116,15 +101,13 @@ public class KamiController : MonoBehaviour
         }
     }
 
-    // left refers to x direction that damage is coming from
-    private void OnDamage(bool left)
+    public override void OnDamage(int damage, bool left)
     {
-        knockbackVelocity = knockbackXStartVelocity;
-        if (left) knockbackVelocity *= -1;
-        rb2d.velocity = new Vector2(knockbackVelocity, knockbackYStartVelocity);
-        knockback = true;
+        base.OnDamage(damage, left);
         Physics2D.IgnoreLayerCollision(9, 13, true);
     }
+
+    
 
     private void ProjectileSpawn(GameObject projectilePrefab, ref float nextProjectile, float projectileCooldown)
     {
@@ -169,7 +152,7 @@ public class KamiController : MonoBehaviour
     {
         if (other.gameObject.layer == enemyLayer)
         {
-            OnDamage(Vector2.Dot(other.GetContact(0).normal, Vector2.left) > 0.5);
+            OnDamage(0, Vector2.Dot(other.GetContact(0).normal, Vector2.left) > 0.5);
         }
     }
 
@@ -177,7 +160,7 @@ public class KamiController : MonoBehaviour
     {
         for (int i = 0; i < other.contactCount; i++)
         {
-            // Checks for a platform contact below the player
+            // Checks for a platform contact below the unit
             if (Vector2.Dot(other.GetContact(i).normal, Vector2.up) > 0.5 && other.gameObject.layer == platformLayer)
             {
                 grounded = true;

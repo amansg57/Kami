@@ -8,7 +8,7 @@ using TMPro;
 public class HealthBarController : MonoBehaviour
 {
     private float maxHP;
-    public EnemyController enemyController;
+    public UnitController enemyController;
     public Image bar;
     private float healthPercent;
     private float currentHPBarPercent;
@@ -17,13 +17,12 @@ public class HealthBarController : MonoBehaviour
 
     private void Start()
     {
-        enemyController = this.GetComponentInParent<EnemyController>();
-        maxHP = enemyController.MaxHealth;
+        enemyController = this.GetComponentInParent<UnitController>();
     }
 
     private void Update()
     {
-        healthPercent = enemyController.Health / maxHP;
+        healthPercent = (float)enemyController.Health / enemyController.MaxHealth;
         currentHPBarPercent = Mathf.SmoothDamp(currentHPBarPercent, healthPercent, ref smoothVelocity, smoothTime);
         bar.fillAmount = currentHPBarPercent;
     }
