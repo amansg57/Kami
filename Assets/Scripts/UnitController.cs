@@ -5,6 +5,7 @@ using UnityEngine;
 // Base class for all 'units' - the player character and enemies
 public class UnitController : MonoBehaviour
 {
+    [SerializeField]
     protected int maxHealth;
     protected int health;
 
@@ -17,6 +18,7 @@ public class UnitController : MonoBehaviour
     {
         rb2d = GetComponent<Rigidbody2D>();
         rb2d.freezeRotation = true;
+        health = maxHealth;
     }
 
     public virtual void OnDamage(int damage, bool left)
@@ -25,5 +27,8 @@ public class UnitController : MonoBehaviour
         if (health <= 0) OnDeath();
     }
 
-    protected virtual void OnDeath() {}
+    protected virtual void OnDeath() 
+    {
+        Destroy(this.gameObject);
+    }
 }

@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 public class KamiController : GroundUnitController
 {
     private const int enemyLayer = 13;
+    private const int enemyVoidLayer = 14;
 
     private const int velocityMult = 5;
     private const int airControlMult = 2;
@@ -17,19 +18,13 @@ public class KamiController : GroundUnitController
     private const float hadoukenCooldown = 0.3f;
     private const float laserCooldown = 0.3f;
 
-    private Vector2 colliderCheckStartPos = new Vector2(-50, 0);
-
     // Time until next projectile can be fired
     private float nextFireball;
     private float nextHadouken;
     private float nextLaser;
     
     [SerializeField]
-    private GameObject fireballPrefab;
-    [SerializeField]
-    private GameObject hadoukenPrefab;
-    [SerializeField]
-    private GameObject laserPrefab;
+    private GameObject fireballPrefab, hadoukenPrefab, laserPrefab;
 
     [SerializeField]
     private Transform projectileSpawnLocation;
@@ -43,28 +38,23 @@ public class KamiController : GroundUnitController
         currentProjectile = Projectile.Fireball;
     }
 
-    private void Start()
-    {
-        knockbackXStartVelocity = 5f;
-        knockbackYStartVelocity = 5f;
-        smoothTime = 0.3f;
-        knockbackStopVelocity = 0.3f;
-    }
-
     protected override void OnKnockbackEnd()
     {
         base.OnKnockbackEnd();
         Physics2D.IgnoreLayerCollision(9, 13, false);
     }
 
-    protected override void AirMovement()
+    protected override void AirControl()
     {
-        rb2d.AddForce(new Vector2(currentXVelocity * airControlMult, 0));
+        if ((rb2d.velocity.x < velocityCap && currentXVelocity > 0) || (rb2d.velocity.x > -velocityCap && currentXVelocity < 0))
+        {
+            rb2d.AddForce(new Vector2(currentXVelocity * airControlMult, 0));
+        }
     }
 
     protected override void OnDeath()
     {
-        base.OnDeath();
+        
     }
 
     public void OnMove(InputValue value)
@@ -104,10 +94,8 @@ public class KamiController : GroundUnitController
     public override void OnDamage(int damage, bool left)
     {
         base.OnDamage(damage, left);
-        Physics2D.IgnoreLayerCollision(9, 13, true);
+        Physics2D.IgnoreLayerCollision(this.gameObject.layer, enemyLayer, true);
     }
-
-    
 
     private void ProjectileSpawn(GameObject projectilePrefab, ref float nextProjectile, float projectileCooldown)
     {
@@ -119,33 +107,6 @@ public class KamiController : GroundUnitController
             if (transform.localScale.x > 0) projectileScript.SetDirection(1);
             else projectileScript.SetDirection(-1);
         }
-    }
-
-    // Returns true if the goal position is not inside the composite collider for the tilemap
-    private bool ColliderTest(Vector2 goal)
-    {
-        RaycastHit2D[] results;
-        Vector2 currentPoint = colliderCheckStartPos;
-        Vector2 direction = goal - colliderCheckStartPos;
-        direction.Normalize();
-        int hits = 0;
-
-        while (currentPoint != goal)
-        {
-            results = Physics2D.LinecastAll(currentPoint, goal, 1<<platformLayer);
-
-            if (results.Length == 0)
-            {
-                currentPoint = goal;
-            }
-            else
-            {
-                currentPoint = results[0].point + (direction / 100f);
-                hits++;
-            }
-        }
-
-        return hits % 2 == 0;
     }
 
     private void OnCollisionEnter2D(Collision2D other)

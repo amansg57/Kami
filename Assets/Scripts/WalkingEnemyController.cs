@@ -7,18 +7,7 @@ public class WalkingEnemyController : GroundUnitController
 {
     private void Start()
     {
-        maxHealth = 5;
-        health = maxHealth;
-        knockbackXStartVelocity = 2f;
-        knockbackYStartVelocity = 2f;
-        knockbackStopVelocity = 0.1f;
-        smoothTime = 0.3f;
         currentXVelocity = -1f;
-    }
-
-    protected override void OnDeath()
-    {
-        Destroy(this.gameObject);
     }
 
     private void OnCollisionStay2D(Collision2D other)

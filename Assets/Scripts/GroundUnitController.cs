@@ -8,17 +8,16 @@ public class GroundUnitController : UnitController
 {
     protected const int platformLayer = 12;
 
-    protected float knockbackXStartVelocity;
-    protected float knockbackYStartVelocity;
+    [SerializeField]
+    protected float knockbackXStartVelocity, knockbackYStartVelocity, knockbackStopVelocity, smoothTime, velocityCap;
     protected float currentXVelocity;
     protected float knockbackVelocity;
     protected float smoothVelocity;
-    protected float smoothTime;
-    protected float knockbackStopVelocity;
-    protected float velocityCap;
 
     protected bool grounded = false;
     protected bool knockback = false;
+
+    private Vector2 colliderCheckStartPos = new Vector2(-50, 0);
 
     private void FixedUpdate()
     {
@@ -35,9 +34,9 @@ public class GroundUnitController : UnitController
         {
             GroundMovement();
         }
-        else if ((rb2d.velocity.x < velocityCap && currentXVelocity > 0) || (rb2d.velocity.x > -velocityCap && currentXVelocity < 0))
+        else
         {
-            AirMovement();
+            AirControl();
         }
         // Reset grounded check each frame
         grounded = false;
@@ -54,7 +53,7 @@ public class GroundUnitController : UnitController
         rb2d.velocity = new Vector2(currentXVelocity, rb2d.velocity.y);
     }
 
-    protected virtual void AirMovement() {}
+    protected virtual void AirControl() {}
 
     public override void OnDamage(int damage, bool left)
     {
@@ -63,6 +62,33 @@ public class GroundUnitController : UnitController
         if (left) knockbackVelocity *= -1;
         rb2d.velocity = new Vector2(knockbackVelocity, knockbackYStartVelocity);
         knockback = true;
+    }
+
+    // Returns true if the goal position is not inside the composite collider for the tilemap
+    protected bool ColliderTest(Vector2 goal)
+    {
+        RaycastHit2D[] results;
+        Vector2 currentPoint = colliderCheckStartPos;
+        Vector2 direction = goal - colliderCheckStartPos;
+        direction.Normalize();
+        int hits = 0;
+
+        while (currentPoint != goal)
+        {
+            results = Physics2D.LinecastAll(currentPoint, goal, 1<<platformLayer);
+
+            if (results.Length == 0)
+            {
+                currentPoint = goal;
+            }
+            else
+            {
+                currentPoint = results[0].point + (direction / 100f);
+                hits++;
+            }
+        }
+
+        return hits % 2 == 0;
     }
 
     private void OnCollisionStay2D(Collision2D other)
